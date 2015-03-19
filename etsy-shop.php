@@ -7,7 +7,7 @@ Plugin Name: Etsy Shop
 Plugin URI: http://wordpress.org/extend/plugins/etsy-shop/
 Description: Inserts Etsy products in page or post using bracket/shortcode method.
 Author: Frédéric Sheedy
-Version: 0.12
+Version: 0.13
 */
 
 /*
@@ -38,7 +38,7 @@ Version: 0.12
  * TODO: Add MCE Button
  */
 
-define( 'ETSY_SHOP_VERSION',  '0.12');
+define( 'ETSY_SHOP_VERSION',  '0.13');
 define( 'ETSY_SHOP_CACHE_LIFE',  21600 ); // 6 hours in seconds
 
 // load translation
@@ -121,7 +121,7 @@ function etsy_shop_post( $the_content ) {
 }
 /* === END: Used for backward-compatibility 0.x versions === */
 
-function etsy_shop_process( $shop_id, $section_id ) {
+function etsy_shop_process( $shop_id, $section_id, $show_available_tag ) {
     // Filter Shop ID and Section ID
     $shop_id = preg_replace( '/[^a-zA-Z0-9,]/', '', $shop_id );
     $section_id = preg_replace( '/[^a-zA-Z0-9,]/', '', $section_id );
@@ -142,7 +142,7 @@ function etsy_shop_process( $shop_id, $section_id ) {
                }
 
                foreach ( $listings->results as $result ) {
-                   $listing_html = etsy_shop_generateListing( $result->listing_id, $result->title, $result->state, $result->price, $result->currency_code, $result->quantity, $result->url, $result->Images[0]->url_170x135, $target );
+                   $listing_html = etsy_shop_generateListing( $result->listing_id, $result->title, $result->state, $result->price, $result->currency_code, $result->quantity, $result->url, $result->Images[0]->url_170x135, $target, $show_available_tag );
                    if ( $listing_html !== false ) {
                        $data = $data.'<td class="etsy-shop-listing">'.$listing_html.'</td>';
                        $n++;
@@ -175,9 +175,10 @@ function etsy_shop_shortcode( $atts ) {
         $attributes = shortcode_atts( array(
             'shop_name' => null,
             'section_id' => null,
+            'show_available_tag' => true,
         ), $atts );
 
-        $content = etsy_shop_process( $attributes['shop_name'], $attributes['section_id'] );
+        $content = etsy_shop_process( $attributes['shop_name'], $attributes['section_id'], $attributes['show_available_tag'] );
         return $content;
     } else {
         // no API Key set, return the content
@@ -275,7 +276,7 @@ function etsy_shop_api_request( $etsy_request, $args = NULL, $noDebug = NULL ) {
     return $request_body;
 }
 
-function etsy_shop_generateListing($listing_id, $title, $state, $price, $currency_code, $quantity, $url, $url_170x135, $target) {
+function etsy_shop_generateListing($listing_id, $title, $state, $price, $currency_code, $quantity, $url, $url_170x135, $target, $show_available_tag) {
     if ( strlen( $title ) > 18 ) {
         $title = substr( $title, 0, 25 );
         $title .= "...";
@@ -283,7 +284,12 @@ function etsy_shop_generateListing($listing_id, $title, $state, $price, $currenc
 
     // if the Shop Item is active
     if ( $state == 'active' ) {
-        $state = __( 'Available', 'etsyshop' );
+    
+        if ( $show_available_tag ) {
+            $state = __( 'Available', 'etsyshop' );
+        } else {
+            $state = '&nbsp;';
+        }
 
         $script_tags =  '
             <div class="etsy-shop-listing-card" id="' . $listing_id . '" style="text-align: center;">
