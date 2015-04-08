@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=9RPPQ
 Tags: etsy, etsy listing, bracket, shortcode, shopping, shop, store, sell
 Tested up to: 4.1.1
 Requires at least: 3.4.2
-Stable tag: 0.13
+Stable tag: 0.13.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -75,6 +75,9 @@ Use '<?php echo do_shortcode( '[etsy-shop shop_name="*your-etsy-shop-name*" sect
 3. Edit Post to include Etsy Shop
 
 == Changelog ==
+
+= 0.13.1 =
+* Correct old shortcode method to avoid PHP Warning
 
 = 0.13 =
 * Option to show or not the Available Status Tag for each item
