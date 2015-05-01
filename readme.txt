@@ -2,9 +2,9 @@
 Contributors: fsheedy
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=9RPPQUY4M2AHL&lc=CA&item_name=Etsy%2dShop%20Wordpress%20Plugin&currency_code=CAD&bn=PP%2dDonationsBF%3abtn_donate_LG%2egif%3aNonHosted
 Tags: etsy, etsy listing, bracket, shortcode, shopping, shop, store, sell
-Tested up to: 4.0
+Tested up to: 4.2.1
 Requires at least: 3.4.2
-Stable tag: 0.11
+Stable tag: 0.14
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -50,6 +50,9 @@ See below 'Etsy Shop: missing arguments'.
 
 So, you should have someting like this: **[etsy-shop shop_name="Laplume" section_id="10088437"]**
 
+More argument:
+* show_available_tag [0 or 1]
+
 = I got Etsy Shop: Your section ID is invalid =
 
 Please use a valid section ID, to find your section ID, see [How to find section ID](http://fsheedy.wordpress.com/etsy-shop-plugin/how-to-find-section-id/ "How to find section ID")
@@ -72,6 +75,19 @@ Use '<?php echo do_shortcode( '[etsy-shop shop_name="*your-etsy-shop-name*" sect
 3. Edit Post to include Etsy Shop
 
 == Changelog ==
+
+= 0.14 =
+* Italian Translation (thanks to Pierantonio Bonato)
+* Compatible with WP 4.2.1
+
+= 0.13.1 =
+* Correct old shortcode method to avoid PHP Warning
+
+= 0.13 =
+* Option to show or not the Available Status Tag for each item
+
+= 0.12 =
+* Permit reset of the cache in the admin page (sponsor Michael Kellar)
 
 = 0.11 =
 * Add the option to change time out value for requests to etsy servers
