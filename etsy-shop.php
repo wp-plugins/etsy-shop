@@ -7,11 +7,11 @@ Plugin Name: Etsy Shop
 Plugin URI: http://wordpress.org/extend/plugins/etsy-shop/
 Description: Inserts Etsy products in page or post using bracket/shortcode method.
 Author: Frédéric Sheedy
-Version: 0.11
+Version: 0.15
 */
 
 /*
- * Copyright 2011-2014  Frédéric Sheedy  (email : sheedf@gmail.com)
+ * Copyright 2011-2015  Frédéric Sheedy  (email : sheedf@gmail.com)
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2, as 
@@ -31,14 +31,14 @@ Version: 0.11
  * TODO: touch() file in tmp folder
  * TODO: reset cache function
  * TODO: edit cache life
- * TODO: allow more than 25 items
+ * TODO: allow more than 100 items
  * TODO: customize currency
  * TODO: get Etsy translations
  * TODO: Use Transients API
  * TODO: Add MCE Button
  */
 
-define( 'ETSY_SHOP_VERSION',  '0.11');
+define( 'ETSY_SHOP_VERSION',  '0.15');
 define( 'ETSY_SHOP_CACHE_LIFE',  21600 ); // 6 hours in seconds
 
 // load translation
@@ -51,7 +51,7 @@ register_activation_hook( __FILE__, 'etsy_shop_activate' );
 add_filter( 'plugin_action_links', 'etsy_shop_plugin_action_links', 10, 2 );
 
 function etsy_shop_load_translation_file() {
-    $plugin_path = plugin_basename( dirname( __FILE__ ) .'/translations' );
+    $plugin_path = plugin_basename( dirname( plugin_basename( __FILE__ ) ) .'/translations' );
     load_plugin_textdomain( 'etsyshop', false, $plugin_path );
 }
 
@@ -121,14 +121,19 @@ function etsy_shop_post( $the_content ) {
 }
 /* === END: Used for backward-compatibility 0.x versions === */
 
-function etsy_shop_process( $shop_id, $section_id ) {
+function etsy_shop_process( $shop_id, $section_id, $show_available_tag = true, $language = null ) {
     // Filter Shop ID and Section ID
     $shop_id = preg_replace( '/[^a-zA-Z0-9,]/', '', $shop_id );
     $section_id = preg_replace( '/[^a-zA-Z0-9,]/', '', $section_id );
+    
+    // Filter Language
+    if ( strlen($language) != 2 ) {
+        $language = null;
+    }
 
     if ( $shop_id != '' || $section_id != '' ) {
         // generate listing for shop section
-        $listings = etsy_shop_getShopSectionListings( $shop_id, $section_id );
+        $listings = etsy_shop_getShopSectionListings( $shop_id, $section_id, $language );
         if ( !get_option( 'etsy_shop_debug_mode' ) ) {
             if ( !is_wp_error( $listings ) ) {
                $data = '<table class="etsy-shop-listing-table"><tr>';
@@ -142,7 +147,7 @@ function etsy_shop_process( $shop_id, $section_id ) {
                }
 
                foreach ( $listings->results as $result ) {
-                   $listing_html = etsy_shop_generateListing( $result->listing_id, $result->title, $result->state, $result->price, $result->currency_code, $result->quantity, $result->url, $result->Images[0]->url_170x135, $target );
+                   $listing_html = etsy_shop_generateListing( $result->listing_id, $result->title, $result->state, $result->price, $result->currency_code, $result->quantity, $result->url, $result->Images[0]->url_170x135, $target, $show_available_tag );
                    if ( $listing_html !== false ) {
                        $data = $data.'<td class="etsy-shop-listing">'.$listing_html.'</td>';
                        $n++;
@@ -175,9 +180,11 @@ function etsy_shop_shortcode( $atts ) {
         $attributes = shortcode_atts( array(
             'shop_name' => null,
             'section_id' => null,
+            'language' => null,
+            'show_available_tag' => true,
         ), $atts );
 
-        $content = etsy_shop_process( $attributes['shop_name'], $attributes['section_id'] );
+        $content = etsy_shop_process( $attributes['shop_name'], $attributes['section_id'], $attributes['show_available_tag'], $attributes['language'] );
         return $content;
     } else {
         // no API Key set, return the content
@@ -186,12 +193,18 @@ function etsy_shop_shortcode( $atts ) {
 }
 add_shortcode( 'etsy-shop', 'etsy_shop_shortcode' );
 
-function etsy_shop_getShopSectionListings( $etsy_shop_id, $etsy_section_id ) {
+function etsy_shop_getShopSectionListings( $etsy_shop_id, $etsy_section_id, $language ) {
     $etsy_cache_file = dirname( __FILE__ ).'/tmp/'.$etsy_shop_id.'-'.$etsy_section_id.'_cache.json';
 
     // if no cache file exist
     if (!file_exists( $etsy_cache_file ) or ( time() - filemtime( $etsy_cache_file ) >= ETSY_SHOP_CACHE_LIFE ) or get_option( 'etsy_shop_debug_mode' ) ) {
-        $reponse = etsy_shop_api_request( "shops/$etsy_shop_id/sections/$etsy_section_id/listings/active", '&limit=100&includes=Images' );
+        // if language set
+        if ($language != null) {
+            $reponse = etsy_shop_api_request( "shops/$etsy_shop_id/sections/$etsy_section_id/listings/active", '&limit=100&includes=Images&language='.$language );
+        } else {
+            $reponse = etsy_shop_api_request( "shops/$etsy_shop_id/sections/$etsy_section_id/listings/active", '&limit=100&includes=Images' );
+        }
+        
         if ( !is_wp_error( $reponse ) ) {
             // if request OK
             $tmp_file = $etsy_cache_file.rand().'.tmp';
@@ -275,7 +288,7 @@ function etsy_shop_api_request( $etsy_request, $args = NULL, $noDebug = NULL ) {
     return $request_body;
 }
 
-function etsy_shop_generateListing($listing_id, $title, $state, $price, $currency_code, $quantity, $url, $url_170x135, $target) {
+function etsy_shop_generateListing($listing_id, $title, $state, $price, $currency_code, $quantity, $url, $url_170x135, $target, $show_available_tag) {
     if ( strlen( $title ) > 18 ) {
         $title = substr( $title, 0, 25 );
         $title .= "...";
@@ -283,7 +296,21 @@ function etsy_shop_generateListing($listing_id, $title, $state, $price, $currenc
 
     // if the Shop Item is active
     if ( $state == 'active' ) {
-        $state = __( 'Available', 'etsyshop' );
+    
+        if ( $show_available_tag ) {
+            $state = __( 'Available', 'etsyshop' );
+        } else {
+            $state = '&nbsp;';
+        }
+        
+        // Determine Currency Symbol
+        if ( $currency_code == 'EUR' ) {
+            //Euro sign
+            $currency_symbol = '&#8364;';
+        } else {
+            // Dollar Sign
+            $currency_symbol = '&#36;';
+        }
 
         $script_tags =  '
             <div class="etsy-shop-listing-card" id="' . $listing_id . '" style="text-align: center;">
@@ -298,7 +325,7 @@ function etsy_shop_generateListing($listing_id, $title, $state, $price, $currenc
                         <a title="' . $title . '" href="' . $url . '" target="' . $target . '">'.$state.'</a>
                     </p>
                 </div>
-                <p class="etsy-shop-listing-price">$'.$price.' <span class="etsy-shop-currency-code">'.$currency_code.'</span></p>
+                <p class="etsy-shop-listing-price">'.$currency_symbol.$price.' <span class="etsy-shop-currency-code">'.$currency_code.'</span></p>
             </div>'; 
 
         return $script_tags;
@@ -384,6 +411,32 @@ function etsy_shop_optionsPage() {
             $updated = true;
         }
     }
+    
+    // delete cache file
+    if ( isset( $_GET['delete'] ) ) {
+    
+        // did a file was choosed?
+        if ( isset( $_GET['file'] ) ) {
+            $tmp_directory = plugin_dir_path( __FILE__ ) . 'tmp/';
+            
+            // REGEX for security!
+            $filename = str_replace( '.json', '', $_GET['file'] );
+            $filename = preg_replace( '/[^a-zA-Z0-9-_]/', '', $filename );
+
+            $fullpath_filename = $tmp_directory . $filename . '.json';
+            if ( file_exists( $fullpath_filename ) ) {
+                $deletion = unlink( $fullpath_filename );
+            } else {
+                $deletion = false;
+            }
+            
+            if ( $deletion ) {
+                // and remember to note deletion to user
+                $deleted = true;
+                $deleted_file = $fullpath_filename;
+            }
+        }
+    }
 
     // grab the Etsy API key
     if( get_option( 'etsy_shop_api_key' ) ) {
@@ -416,6 +469,10 @@ function etsy_shop_optionsPage() {
     if ( $updated ) {
         echo '<div class="updated fade"><p><strong>'. __( 'Options saved.', 'etsyshop' ) .'</strong></p></div>';
     }
+    
+    if ( $deleted ) {
+        echo '<div class="updated fade"><p><strong>'. __( 'Cache file deleted:', 'etsyshop' ) . ' ' . $deleted_file . '</strong></p></div>';
+    }
 
     // print the Options Page
     ?>
@@ -430,9 +487,9 @@ function etsy_shop_optionsPage() {
                     <td>
                         <input id="etsy_shop_api_key" name="etsy_shop_api_key" type="text" size="25" value="<?php echo get_option( 'etsy_shop_api_key' ); ?>" class="regular-text code" />
                                     <?php if ( !is_wp_error( etsy_shop_testAPIKey()) ) { ?>
-                                        <span id="etsy_shop_api_key_status" style="color:green;font-weight:bold;">Your API Key is valid</span>
+                                        <span id="etsy_shop_api_key_status" style="color:green;font-weight:bold;"><?php _e( 'Your API Key is valid', 'etsyshop' ); ?></span>
                                     <?php } elseif ( get_option('etsy_shop_api_key') ) { ?>
-                                        <span id="etsy_shop_api_key_status" style="color:red;font-weight:bold;">You API Key is invalid</span>
+                                        <span id="etsy_shop_api_key_status" style="color:red;font-weight:bold;"><?php _e( 'You API Key is invalid', 'etsyshop' ); ?></span>
                                     <?php } ?>
                                     <p class="description">
                                     <?php echo sprintf( __('You may get an Etsy API Key by <a href="%1$s">Creating a new Etsy App</a>', 'etsyshop' ), 'http://www.etsy.com/developers/register' ); ?></p>
@@ -482,12 +539,13 @@ function etsy_shop_optionsPage() {
                                 <th scope="row"><?php _e('Cache Status', 'etsyshop'); ?></th>
                                 <td>
                                     <?php if (get_option('etsy_shop_api_key')) { ?>
-                                    <table class="wp-list-table widefat fixed">
-                                        <thead>
+                                    <table class="wp-list-table widefat">
+                                        <thead id="EtsyShopCacheTableHead">
                                         <tr>
-                                            <th>Shop Section</th>
-                                            <th>Filename</th>
-                                            <th>Last update</th>
+                                            <th><?php _e('Shop Section', 'etsyshop'); ?></th>
+                                            <th><?php _e('Filename', 'etsyshop'); ?></th>
+                                            <th><?php _e('Last update', 'etsyshop'); ?></th>
+                                            <th></th>
                                         </tr>
                                         </thead>
                                         <?php
@@ -500,9 +558,10 @@ function etsy_shop_optionsPage() {
                                     $etsy_shop_section = explode( "-", substr( basename( $file ), 0, strpos( basename( $file ), '_cache.json' ) ) );
                                     $etsy_shop_section_info = etsy_shop_getShopSection($etsy_shop_section[0], $etsy_shop_section[1]);
                                     if ( !is_wp_error( $etsy_shop_section_info ) ) {
-                                        echo '<tr><td>' . $etsy_shop_section[0] . ' / ' . $etsy_shop_section_info->results[0]->title . '</td><td>' . basename( $file ) . '</td><td>' .  date( "Y-m-d H:i:s", filemtime( $file ) ) . '</td></tr>';
+                                       echo '<tr><td>' . $etsy_shop_section[0] . ' / ' . $etsy_shop_section_info->results[0]->title . '</td><td>' . basename( $file ) . '</td><td>' .  date( "Y-m-d H:i:s", filemtime( $file ) ) . '</td><td><a href="options-general.php?page=etsy-shop.php&delete&file=' . basename( $file ) . '" title="'. __('Delete cache file', 'etsyshop') .'"><span class="dashicons dashicons-trash"></span></a></td></tr>';
+                                       // echo '<tr><td>' . $etsy_shop_section[0] . ' / ' . $etsy_shop_section_info->results[0]->title . '</td><td>' . basename( $file ) . '</td><td>' .  date( "Y-m-d H:i:s", filemtime( $file ) ) . '</td><td><a href="" title="' . _e('Delete cache file', 'etsyshop'); . '"><span class="dashicons dashicons-trash"></span></a></td></tr>';
                                     } else {
-                                        echo '<tr><td>' . $etsy_shop_section[0] . ' / <span style="color:red;">Error on API Request</span>' . '</td><td>' . basename( $file ) . '</td><td>' .  date( "Y-m-d H:i:s", filemtime( $file ) ) . '</td></tr>';
+                                        echo '<tr><td>' . $etsy_shop_section[0] . ' / <span style="color:red;">Error on API Request</span>' . '</td><td>' . basename( $file ) . '</td><td>' .  date( "Y-m-d H:i:s", filemtime( $file ) ) . '</td><td></td></tr>';
                                     }
                                 }
                                     ?></table><?php } else { _e('You must enter your Etsy API Key to view cache status!', 'etsyshop'); } ?>
