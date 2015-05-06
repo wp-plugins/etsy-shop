@@ -7,7 +7,7 @@ Plugin Name: Etsy Shop
 Plugin URI: http://wordpress.org/extend/plugins/etsy-shop/
 Description: Inserts Etsy products in page or post using bracket/shortcode method.
 Author: Frédéric Sheedy
-Version: 0.14
+Version: 0.15
 */
 
 /*
@@ -38,7 +38,7 @@ Version: 0.14
  * TODO: Add MCE Button
  */
 
-define( 'ETSY_SHOP_VERSION',  '0.13.1');
+define( 'ETSY_SHOP_VERSION',  '0.15');
 define( 'ETSY_SHOP_CACHE_LIFE',  21600 ); // 6 hours in seconds
 
 // load translation
@@ -121,14 +121,19 @@ function etsy_shop_post( $the_content ) {
 }
 /* === END: Used for backward-compatibility 0.x versions === */
 
-function etsy_shop_process( $shop_id, $section_id, $show_available_tag = true ) {
+function etsy_shop_process( $shop_id, $section_id, $show_available_tag = true, $language = null ) {
     // Filter Shop ID and Section ID
     $shop_id = preg_replace( '/[^a-zA-Z0-9,]/', '', $shop_id );
     $section_id = preg_replace( '/[^a-zA-Z0-9,]/', '', $section_id );
+    
+    // Filter Language
+    if ( strlen($language) != 2 ) {
+        $language = null;
+    }
 
     if ( $shop_id != '' || $section_id != '' ) {
         // generate listing for shop section
-        $listings = etsy_shop_getShopSectionListings( $shop_id, $section_id );
+        $listings = etsy_shop_getShopSectionListings( $shop_id, $section_id, $language );
         if ( !get_option( 'etsy_shop_debug_mode' ) ) {
             if ( !is_wp_error( $listings ) ) {
                $data = '<table class="etsy-shop-listing-table"><tr>';
@@ -175,10 +180,11 @@ function etsy_shop_shortcode( $atts ) {
         $attributes = shortcode_atts( array(
             'shop_name' => null,
             'section_id' => null,
+            'language' => null,
             'show_available_tag' => true,
         ), $atts );
 
-        $content = etsy_shop_process( $attributes['shop_name'], $attributes['section_id'], $attributes['show_available_tag'] );
+        $content = etsy_shop_process( $attributes['shop_name'], $attributes['section_id'], $attributes['show_available_tag'], $attributes['language'] );
         return $content;
     } else {
         // no API Key set, return the content
@@ -187,12 +193,18 @@ function etsy_shop_shortcode( $atts ) {
 }
 add_shortcode( 'etsy-shop', 'etsy_shop_shortcode' );
 
-function etsy_shop_getShopSectionListings( $etsy_shop_id, $etsy_section_id ) {
+function etsy_shop_getShopSectionListings( $etsy_shop_id, $etsy_section_id, $language ) {
     $etsy_cache_file = dirname( __FILE__ ).'/tmp/'.$etsy_shop_id.'-'.$etsy_section_id.'_cache.json';
 
     // if no cache file exist
     if (!file_exists( $etsy_cache_file ) or ( time() - filemtime( $etsy_cache_file ) >= ETSY_SHOP_CACHE_LIFE ) or get_option( 'etsy_shop_debug_mode' ) ) {
-        $reponse = etsy_shop_api_request( "shops/$etsy_shop_id/sections/$etsy_section_id/listings/active", '&limit=100&includes=Images' );
+        // if language set
+        if ($language != null) {
+            $reponse = etsy_shop_api_request( "shops/$etsy_shop_id/sections/$etsy_section_id/listings/active", '&limit=100&includes=Images&language='.$language );
+        } else {
+            $reponse = etsy_shop_api_request( "shops/$etsy_shop_id/sections/$etsy_section_id/listings/active", '&limit=100&includes=Images' );
+        }
+        
         if ( !is_wp_error( $reponse ) ) {
             // if request OK
             $tmp_file = $etsy_cache_file.rand().'.tmp';
@@ -290,6 +302,15 @@ function etsy_shop_generateListing($listing_id, $title, $state, $price, $currenc
         } else {
             $state = '&nbsp;';
         }
+        
+        // Determine Currency Symbol
+        if ( $currency_code == 'EUR' ) {
+            //Euro sign
+            $currency_symbol = '&#8364;';
+        } else {
+            // Dollar Sign
+            $currency_symbol = '&#36;';
+        }
 
         $script_tags =  '
             <div class="etsy-shop-listing-card" id="' . $listing_id . '" style="text-align: center;">
@@ -304,7 +325,7 @@ function etsy_shop_generateListing($listing_id, $title, $state, $price, $currenc
                         <a title="' . $title . '" href="' . $url . '" target="' . $target . '">'.$state.'</a>
                     </p>
                 </div>
-                <p class="etsy-shop-listing-price">$'.$price.' <span class="etsy-shop-currency-code">'.$currency_code.'</span></p>
+                <p class="etsy-shop-listing-price">'.$currency_symbol.$price.' <span class="etsy-shop-currency-code">'.$currency_code.'</span></p>
             </div>'; 
 
         return $script_tags;
@@ -403,7 +424,11 @@ function etsy_shop_optionsPage() {
             $filename = preg_replace( '/[^a-zA-Z0-9-_]/', '', $filename );
 
             $fullpath_filename = $tmp_directory . $filename . '.json';
-            $deletion = unlink( $fullpath_filename );
+            if ( file_exists( $fullpath_filename ) ) {
+                $deletion = unlink( $fullpath_filename );
+            } else {
+                $deletion = false;
+            }
             
             if ( $deletion ) {
                 // and remember to note deletion to user
@@ -462,9 +487,9 @@ function etsy_shop_optionsPage() {
                     <td>
                         <input id="etsy_shop_api_key" name="etsy_shop_api_key" type="text" size="25" value="<?php echo get_option( 'etsy_shop_api_key' ); ?>" class="regular-text code" />
                                     <?php if ( !is_wp_error( etsy_shop_testAPIKey()) ) { ?>
-                                        <span id="etsy_shop_api_key_status" style="color:green;font-weight:bold;">Your API Key is valid</span>
+                                        <span id="etsy_shop_api_key_status" style="color:green;font-weight:bold;"><?php _e( 'Your API Key is valid', 'etsyshop' ); ?></span>
                                     <?php } elseif ( get_option('etsy_shop_api_key') ) { ?>
-                                        <span id="etsy_shop_api_key_status" style="color:red;font-weight:bold;">You API Key is invalid</span>
+                                        <span id="etsy_shop_api_key_status" style="color:red;font-weight:bold;"><?php _e( 'You API Key is invalid', 'etsyshop' ); ?></span>
                                     <?php } ?>
                                     <p class="description">
                                     <?php echo sprintf( __('You may get an Etsy API Key by <a href="%1$s">Creating a new Etsy App</a>', 'etsyshop' ), 'http://www.etsy.com/developers/register' ); ?></p>
