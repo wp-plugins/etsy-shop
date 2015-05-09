@@ -38,7 +38,7 @@ Version: 0.15
  * TODO: Add MCE Button
  */
 
-define( 'ETSY_SHOP_VERSION',  '0.15');
+define( 'ETSY_SHOP_VERSION',  '0.15.1');
 define( 'ETSY_SHOP_CACHE_LIFE',  21600 ); // 6 hours in seconds
 
 // load translation
@@ -137,7 +137,7 @@ function etsy_shop_process( $shop_id, $section_id, $show_available_tag = true, $
         if ( !get_option( 'etsy_shop_debug_mode' ) ) {
             if ( !is_wp_error( $listings ) ) {
                $data = '<table class="etsy-shop-listing-table"><tr>';
-               $n = 1;
+               $n = 0;
 
                //verify if we use target blank
                if ( get_option( 'etsy_shop_target_blank' ) ) {
@@ -151,9 +151,9 @@ function etsy_shop_process( $shop_id, $section_id, $show_available_tag = true, $
                    if ( $listing_html !== false ) {
                        $data = $data.'<td class="etsy-shop-listing">'.$listing_html.'</td>';
                        $n++;
-                       if ( $n == 4 ) {
+                       if ( $n % ( !get_option( 'etsy_shop_column_count' ) ? 4 : get_option( 'etsy_shop_column_count' ) ) == 0 ) {
                            $data = $data.'</tr><tr>';
-                           $n = 1;
+                           //$n = 1;
                        }
                    }
                 }
@@ -402,6 +402,23 @@ function etsy_shop_optionsPage() {
             $updated = true;
         }
 
+        // did the user enter column count?
+        if ( isset( $_POST['etsy_shop_column_count'] ) ) {
+            $etsy_shop_column_count = wp_filter_nohtml_kses( $_POST['etsy_shop_column_count'] );
+            //die($etsy_shop_debug_mode);
+            update_option( 'etsy_shop_column_count', $etsy_shop_column_count );
+
+            // and remember to note the update to user
+            $updated = true;
+        }else {
+            $etsy_shop_column_count = 0;
+            //die($etsy_shop_debug_mode);
+            update_option( 'etsy_shop_column_count', $etsy_shop_column_count );
+
+            // and remember to note the update to user
+            $updated = true;
+        }
+
         // did the user enter an Timeout?
         if ( isset( $_POST['etsy_shop_timeout'] ) ) {
             $etsy_shop_timeout = wp_filter_nohtml_kses( preg_replace( '/[^0-9]/', '', $_POST['etsy_shop_timeout'] ) );
@@ -459,6 +476,13 @@ function etsy_shop_optionsPage() {
         add_option( 'etsy_shop_target_blank', '0' );
     }
 
+     // grab the Etsy column count
+    if( get_option( 'etsy_shop_column_count' ) ) {
+        $etsy_shop_column_count = get_option( 'etsy_shop_column_count' );
+    } else {
+        add_option( 'etsy_shop_column_count', '4' );
+    }
+
     // grab the Etsy Tiomeout
     if( get_option( 'etsy_shop_timeout' ) ) {
         $etsy_shop_timeout = get_option( 'etsy_shop_timeout' );
@@ -512,6 +536,16 @@ function etsy_shop_optionsPage() {
                                 <input id="etsy_shop_target_blank" name="etsy_shop_target_blank" type="checkbox" value="1" <?php checked( '1', get_option( 'etsy_shop_target_blank' ) ); ?> />
                                     <p class="description">
                                     <?php echo __( 'If you want your links to open a page in a new window', 'etsyshop' ); ?>
+                                    </p>
+                             </td>
+                 </tr>
+                 <tr valign="top">
+                     <th scope="row">
+                         <label for="etsy_shop_column_count"></label><?php _e('Columns', 'etsyshop'); ?></th>
+                             <td>
+                                <input id="etsy_shop_column_count" name="etsy_shop_column_count" type="text" value="<?php echo (!get_option( 'etsy_shop_column_count' ) ? 4 : get_option( 'etsy_shop_column_count' )); ?>" />
+                                    <p class="description">
+                                    <?php echo __( 'Number of columns to display when showing your Etsy store items', 'etsyshop' ); ?>
                                     </p>
                              </td>
                  </tr>
