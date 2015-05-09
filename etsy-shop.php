@@ -137,7 +137,7 @@ function etsy_shop_process( $shop_id, $section_id, $show_available_tag = true, $
         if ( !get_option( 'etsy_shop_debug_mode' ) ) {
             if ( !is_wp_error( $listings ) ) {
                $data = '<table class="etsy-shop-listing-table"><tr>';
-               $n = 1;
+               $n = 0;
 
                //verify if we use target blank
                if ( get_option( 'etsy_shop_target_blank' ) ) {
@@ -151,9 +151,9 @@ function etsy_shop_process( $shop_id, $section_id, $show_available_tag = true, $
                    if ( $listing_html !== false ) {
                        $data = $data.'<td class="etsy-shop-listing">'.$listing_html.'</td>';
                        $n++;
-                       if ( $n == ( !get_option( 'etsy_shop_column_count' ) ? 4 : get_option( 'etsy_shop_column_count' )) ) {
-                           $data = $data.get_option( 'etsy_shop_column_count' ).'</tr><tr>';
-                           $n = 1;
+                       if ( $n % ( !get_option( 'etsy_shop_column_count' ) ? 4 : get_option( 'etsy_shop_column_count' ) ) == 0 ) {
+                           $data = $data.'</tr><tr>';
+                           //$n = 1;
                        }
                    }
                 }
