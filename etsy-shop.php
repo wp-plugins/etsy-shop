@@ -152,7 +152,7 @@ function etsy_shop_process( $shop_id, $section_id, $show_available_tag = true, $
                        $data = $data.'<td class="etsy-shop-listing">'.$listing_html.'</td>';
                        $n++;
                        if ( $n == ( !get_option( 'etsy_shop_column_count' ) ? 4 : get_option( 'etsy_shop_column_count' )) ) {
-                           $data = $data.'</tr><tr>';
+                           $data = $data.get_option( 'etsy_shop_column_count' ).'</tr><tr>';
                            $n = 1;
                        }
                    }
