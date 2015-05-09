@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=9RPPQ
 Tags: etsy, etsy listing, bracket, shortcode, shopping, shop, store, sell
 Tested up to: 4.2.1
 Requires at least: 3.4.2
-Stable tag: 0.15
+Stable tag: 0.16
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -76,6 +76,14 @@ Use '<?php echo do_shortcode( '[etsy-shop shop_name="*your-etsy-shop-name*" sect
 
 == Changelog ==
 
+= 0.16 =
+* Option to select number of columns to show
+* Option to select a single listing ID
+* Option to height & width of thumbnail
+* Option to choose thumbnail size
+* CSS Update
+* Portion of code from Steague, thanks!
+
 = 0.15 =
 * Add Option to choose translation language for the content
 * Automatically choose Dollard Sign or Euro sign
@@ -98,7 +106,7 @@ Use '<?php echo do_shortcode( '[etsy-shop shop_name="*your-etsy-shop-name*" sect
 * Time out value by default is 10 seconds instead of 5
 
 = 0.10 =
-* Compatbile with WP 3.9.2
+* Compatible with WP 3.9.2
 * Now use WP Shortcode API
 * Allow maximum of 100 items per section instead of 25 items
 
