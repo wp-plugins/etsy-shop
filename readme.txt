@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=9RPPQ
 Tags: etsy, etsy listing, bracket, shortcode, shopping, shop, store, sell
 Tested up to: 4.2.1
 Requires at least: 3.4.2
-Stable tag: 0.16
+Stable tag: 0.16.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -75,6 +75,10 @@ Use '<?php echo do_shortcode( '[etsy-shop shop_name="*your-etsy-shop-name*" sect
 3. Edit Post to include Etsy Shop
 
 == Changelog ==
+
+= 0.16.1 =
+* Mistake, default columns is 3, not 4
+* You can add **columns="5"**, to your short code. Replace number 5 by the number you want
 
 = 0.16 =
 * Option to select number of columns to show

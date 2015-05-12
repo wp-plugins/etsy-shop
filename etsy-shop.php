@@ -7,7 +7,7 @@ Plugin Name: Etsy Shop
 Plugin URI: http://wordpress.org/extend/plugins/etsy-shop/
 Description: Inserts Etsy products in page or post using bracket/shortcode method.
 Author: Frédéric Sheedy
-Version: 0.16
+Version: 0.16.1
 */
 
 /*
@@ -38,7 +38,7 @@ Version: 0.16
  * TODO: Add MCE Button
  */
 
-define( 'ETSY_SHOP_VERSION',  '0.16');
+define( 'ETSY_SHOP_VERSION',  '0.16.1');
 define( 'ETSY_SHOP_CACHE_LIFE',  21600 ); // 6 hours in seconds
 
 // load translation
@@ -132,7 +132,7 @@ function etsy_shop_process() {
             $listing_id         = null;
             $show_available_tag = true;
             $language           = null;
-            $columns            = 4;
+            $columns            = 3;
             $thumb_size         = 'medium';
             $width              = '172px';
             $height             = '135px';
@@ -144,7 +144,7 @@ function etsy_shop_process() {
             $listing_id         = $attributes['listing_id'];
             $show_available_tag = ( !$attributes['show_available_tag'] ? true : $attributes['show_available_tag'] );
             $language           = ( !$attributes['language'] ? null : $attributes['language']);
-            $columns            = ( !$attributes['columns'] ? 4 : $attributes['columns'] );
+            $columns            = ( !$attributes['columns'] ? 3 : $attributes['columns'] );
             $thumb_size         = ( !$attributes['thumb_size'] ? "medium" : $attributes['thumb_size'] );
             $width              = ( !$attributes['width'] ? "172px" : $attributes['width'] );
             $height             = ( !$attributes['height'] ? "135px" : $attributes['height'] );
