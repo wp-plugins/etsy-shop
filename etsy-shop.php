@@ -7,7 +7,7 @@ Plugin Name: Etsy Shop
 Plugin URI: http://wordpress.org/extend/plugins/etsy-shop/
 Description: Inserts Etsy products in page or post using bracket/shortcode method.
 Author: Frédéric Sheedy
-Version: 0.16.1
+Version: 0.16.2
 */
 
 /*
@@ -38,7 +38,7 @@ Version: 0.16.1
  * TODO: Add MCE Button
  */
 
-define( 'ETSY_SHOP_VERSION',  '0.16.1');
+define( 'ETSY_SHOP_VERSION',  '0.16.2');
 define( 'ETSY_SHOP_CACHE_LIFE',  21600 ); // 6 hours in seconds
 
 // load translation
@@ -142,7 +142,7 @@ function etsy_shop_process() {
             $shop_id            = $attributes['shop_name'];
             $section_id         = $attributes['section_id'];
             $listing_id         = $attributes['listing_id'];
-            $show_available_tag = ( !$attributes['show_available_tag'] ? true : $attributes['show_available_tag'] );
+            $show_available_tag = ( !$attributes['show_available_tag'] ? false : $attributes['show_available_tag'] );
             $language           = ( !$attributes['language'] ? null : $attributes['language']);
             $columns            = ( !$attributes['columns'] ? 3 : $attributes['columns'] );
             $thumb_size         = ( !$attributes['thumb_size'] ? "medium" : $attributes['thumb_size'] );
