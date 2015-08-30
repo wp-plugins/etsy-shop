@@ -7,7 +7,7 @@ Plugin Name: Etsy Shop
 Plugin URI: http://wordpress.org/extend/plugins/etsy-shop/
 Description: Inserts Etsy products in page or post using bracket/shortcode method.
 Author: Frédéric Sheedy
-Version: 0.16.2
+Version: 0.17
 */
 
 /*
@@ -38,7 +38,7 @@ Version: 0.16.2
  * TODO: Add MCE Button
  */
 
-define( 'ETSY_SHOP_VERSION',  '0.16.2');
+define( 'ETSY_SHOP_VERSION',  '0.17');
 define( 'ETSY_SHOP_CACHE_LIFE',  21600 ); // 6 hours in seconds
 
 // load translation
@@ -375,8 +375,11 @@ function etsy_shop_generateListing($listing_id, $title, $state, $price, $currenc
         
         // Determine Currency Symbol
         if ( $currency_code == 'EUR' ) {
-            //Euro sign
+            // Euro sign
             $currency_symbol = '&#8364;';
+        } else if ( $currency_code == 'GBP' ) {    
+            // Pound sign
+            $currency_symbol = '&#163;';
         } else {
             // Dollar Sign
             $currency_symbol = '&#36;';
